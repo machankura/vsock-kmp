@@ -51,7 +51,9 @@ abstract class BaseVSock : Closeable {
         if (backlog <= 0) {
             backlog = DEFAULT_BACKLOG
         }
-        getImplementation()!!.bind(address)
+        if (address != null) {
+            getImplementation()!!.bind(address)
+        }
         getImplementation()!!.listen(backlog)
         bound = true
     }

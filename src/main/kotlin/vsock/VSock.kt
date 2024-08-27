@@ -26,9 +26,9 @@ class VSock : BaseVSock, Closeable {
     var inputStream: VSockInputStream? = null
         get() {
             if (isClosed) {
-                getImplementation()!!.create()
-                isClosed = false;
-                //throw SocketException("VSock is closed thrown in Vsock")
+                //getImplementation()!!.create()
+                //isClosed = false;
+                throw SocketException("VSock is closed thrown in Vsock")
             }
             if (field == null) {
                 field = getImplementation()?.let { VSockInputStream(it) }
@@ -41,7 +41,9 @@ class VSock : BaseVSock, Closeable {
 
     constructor(address: VSockAddress?) {
         try {
-            getImplementation()!!.connect(address)
+            if (address != null) {
+                getImplementation()!!.connect(address)
+            }
         } catch (e: Exception) {
             try {
                 close()
@@ -60,7 +62,9 @@ class VSock : BaseVSock, Closeable {
         if (connected) {
             throw SocketException("Socket already connected")
         }
-        getImplementation()!!.connect(address)
+        if (address != null) {
+            getImplementation()!!.connect(address)
+        }
         connected = true
         bound = true
     }

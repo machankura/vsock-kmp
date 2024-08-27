@@ -6,8 +6,8 @@ import java.net.SocketException
 class VSockImpl {
 
     init {
-        // Load the native library (libvsockk.so or vsockk.dll)
-        System.loadLibrary("vsockk")
+        // Load the native library (libvsock-kmp.so or vsock-kmp.dll)
+        System.loadLibrary("vsock-kmp")
     }
 
     // File descriptor for the socket

@@ -1,5 +1,5 @@
 #include <jni.h>
-#include "VSockImpl.h" // Include the generated JNI header
+#include "VSockImpl.h"
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>

@@ -1,3 +1,5 @@
+import java.util.*
+
 plugins {
     kotlin("multiplatform") version "2.0.0"
     `maven-publish`
@@ -11,41 +13,82 @@ repositories {
 }
 
 kotlin {
-    // Define a JVM target with Java interoperability
     jvm {
         withJava()
     }
 
     // For now, we focus on JVM as the target
+
+    sourceSets {
+        val jvmMain by getting {
+            kotlin.srcDir("src/main/kotlin")
+        }
+        /*val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+            }
+        }*/
+    }
 }
 
 tasks {
-    // Task to compile the native code
-    val compileNative by creating(Exec::class) {
+    // Task to configure the native code build
+    val configureNative by creating(Exec::class) {
         group = "build"
-        description = "Compiles the native C++ code into a shared library"
+        description = "Configures the native C++ code build using CMake"
 
-        val outputDir = layout.buildDirectory.dir("libs").get().asFile
+        val buildDir = layout.buildDirectory.dir("cmake-build").get().asFile
+        val outputDir = layout.buildDirectory.dir("cmake-build/libs").get().asFile
         outputs.dir(outputDir)
 
-        // Compile command for Linux/MacOS
-        commandLine("g++", "-shared", "-fPIC", "-I${System.getenv("JAVA_HOME")}/include", "-I${System.getenv("JAVA_HOME")}/include/linux", "-o", "$outputDir/libvsockk.so", "src/main/cpp/VSockImpl.cpp")
-
-        // For Windows users can build the dll by uncommenting this:
-        // commandLine("g++", "-shared", "-o", "$outputDir/vsockk.dll", "-I%JAVA_HOME%/include", "-I%JAVA_HOME%/include/win32", "src/main/cpp/VSockImpl.cpp")
-    }
-
-    // Compile the Kotlin classes before JNI
-    named("compileKotlinJvm") {
-        dependsOn(compileNative)
-    }
-
-    // Add the native library in the JAR
-    named<Jar>("jvmJar") {
-        from(layout.buildDirectory.dir("libs").get().asFile) {
-            include("libvsockk.so")  // For Linux/MacOS
-            // include("vsockk.dll")  // Windows
+        doFirst {
+            buildDir.mkdirs()
         }
+
+        // CMake configuration
+        commandLine("cmake", "-S", ".", "-B", buildDir.absolutePath)
+    }
+
+    // Task to actually build the native library
+    val buildNative by creating(Exec::class) {
+        group = "build"
+        description = "Builds the native C++ library using the configured CMake files"
+
+        val buildDir = layout.buildDirectory.dir("cmake-build").get().asFile
+
+        doFirst {
+            buildDir.mkdirs()
+        }
+
+        val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+        when {
+            osName.contains("win") -> {
+                commandLine("cmake", "--build", buildDir.absolutePath, "--config", "Release")
+            }
+            osName.contains("nix") || osName.contains("nux") || osName.contains("mac") -> {
+                commandLine("cmake", "--build", buildDir.absolutePath)
+            }
+            else -> {
+                throw GradleException("Unsupported OS: $osName")
+            }
+        }
+
+        dependsOn(configureNative)
+    }
+
+    // Compile kotlin classes after the native stuff
+    named("compileKotlinJvm") {
+        dependsOn(buildNative)
+    }
+
+    // Create the JAR file including compiled classes and native libraries
+    named<Jar>("jvmJar") {
+        dependsOn(buildNative)
+
+        from(layout.buildDirectory.dir("classes/kotlin/jvm/main"))
+        from(layout.buildDirectory.dir("cmake-build/libs"))
     }
 }
 
@@ -55,25 +98,35 @@ publishing {
         create<MavenPublication>("mavenJava") {
             from(components["kotlin"])
 
-            // Add compiled native libraries to the published artifacts
-            artifact(layout.buildDirectory.file("libs/libvsockk.so").get().asFile) { // For Linux/MacOS
-                // artifact(layout.buildDirectory.file("libs/vsockk.dll").get().asFile)  // Windows
-                classifier = ""
-                extension = "so"  // Use "dll" for Windows
+            // Add also the compiled native libraries to the published artifacts
+            val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+            if (osName.contains("win")) {
+                artifact(layout.buildDirectory.file("libs/vsock-kmp.dll").get().asFile) {
+                    classifier = ""
+                    extension = "dll"
+                }
+            } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("mac")) {
+                artifact(layout.buildDirectory.file("libs/libvsock-kmp.so").get().asFile) {
+                    classifier = ""
+                    extension = "so"
+                }
             }
 
             groupId = project.group.toString()
-            artifactId = "vsockk"
+            artifactId = "vsock-kmp"
             version = project.version.toString()
         }
     }
 
     repositories {
         maven {
-            // We'll use JitPack repository for publishing
+            // We'll use JitPack repository for publishing, maybe for now
             url = uri("https://jitpack.io")
         }
     }
 }
 
-// Tests are coming
+// Tests
+/*tasks.withType<Test> {
+    useJUnitPlatform()
+}*/
