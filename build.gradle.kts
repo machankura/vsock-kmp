@@ -15,6 +15,13 @@ repositories {
 kotlin {
     jvm {
         withJava()
+        compilations["test"].defaultSourceSet {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+            }
+        }
     }
 
     // For now, we focus on JVM as the target
@@ -24,11 +31,7 @@ kotlin {
             kotlin.srcDir("src/main/kotlin")
         }
         val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-                implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
-            }
+            kotlin.srcDir("src/test/kotlin")
         }
     }
 }
@@ -78,6 +81,38 @@ tasks {
         dependsOn(configureNative)
     }
 
+    // Ensure tests depend on native build
+    withType<Test> {
+        useJUnitPlatform()
+        dependsOn(buildNative)
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
+
+        // Directory containing the native library added to the JVM library path
+        val libDir = layout.buildDirectory.dir("cmake-build/libs").get().asFile
+        systemProperty("java.library.path", libDir)
+
+        // Build should fail immediately if any test fails
+        //failFast = true
+    }
+
+    // Disable test tasks if the 'skipTests' property is set
+    gradle.taskGraph.whenReady {
+        if (gradle.startParameter.taskNames.contains("skipTests")) {
+            withType<Test>().configureEach {
+                enabled = false
+            }
+        }
+    }
+
+    // Skip tests - does not work yet, same as test alone but build run tests
+    val skipTests by creating {
+        group = "build"
+        description = "Builds the project without running tests"
+        dependsOn("build")
+    }
+
     // Compile kotlin classes after the native stuff
     named("compileKotlinJvm") {
         dependsOn(buildNative)
@@ -124,9 +159,4 @@ publishing {
             url = uri("https://jitpack.io")
         }
     }
-}
-
-// Tests task
-tasks.withType<Test> {
-    useJUnitPlatform()
 }

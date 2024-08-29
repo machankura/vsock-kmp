@@ -8,7 +8,7 @@ if (WIN32)
     set(LIBRARY_OUTPUT_NAME vsock-kmp)
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 elseif (UNIX)
-    set(LIBRARY_OUTPUT_NAME vsock-kmp)
+    set(LIBRARY_OUTPUT_NAME libvsock-kmp)
     set(CMAKE_SHARED_LIBRARY_PREFIX "")
 endif()
 
