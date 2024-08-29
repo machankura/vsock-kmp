@@ -23,13 +23,13 @@ kotlin {
         val jvmMain by getting {
             kotlin.srcDir("src/main/kotlin")
         }
-        /*val jvmTest by getting {
+        val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
                 runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
             }
-        }*/
+        }
     }
 }
 
@@ -126,7 +126,7 @@ publishing {
     }
 }
 
-// Tests
-/*tasks.withType<Test> {
+// Tests task
+tasks.withType<Test> {
     useJUnitPlatform()
-}*/
+}
