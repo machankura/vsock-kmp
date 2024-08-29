@@ -15,7 +15,7 @@
 extern "C" {
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_socketCreate(JNIEnv *env, jobject thisObj) {
+Java_machankura_vsockk_VSockImpl_socketCreate(JNIEnv *env, jobject thisObj) {
 int fd = socket(AF_VSOCK, SOCK_STREAM, 0);
 if (fd < 0) {
 env->ThrowNew(env->FindClass("java/net/SocketException"), "Failed to create socket");
@@ -29,7 +29,7 @@ env->SetIntField(thisObj, fdField, fd);
 }
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_connect(JNIEnv *env, jobject thisObj, jobject addr) {
+Java_machankura_vsockk_VSockImpl_nativeConnect(JNIEnv *env, jobject thisObj, jobject addr) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -59,7 +59,7 @@ env->ThrowNew(env->FindClass("java/net/ConnectException"),
 }
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_close(JNIEnv *env, jobject thisObj) {
+Java_machankura_vsockk_VSockImpl_nativeClose(JNIEnv *env, jobject thisObj) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -79,7 +79,7 @@ env->SetIntField(thisObj, fdField, -1);
 }
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_write(JNIEnv *env, jobject thisObj, jbyteArray b, jint offset, jint len) {
+Java_machankura_vsockk_VSockImpl_nativeWrite(JNIEnv *env, jobject thisObj, jbyteArray b, jint offset, jint len) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -106,7 +106,7 @@ offset += chunkLen;
 }
 
 JNIEXPORT jint JNICALL
-        Java_machankura_vsockk_native_VSockImpl_read(JNIEnv *env, jobject thisObj, jbyteArray b, jint offset, jint len) {
+        Java_machankura_vsockk_VSockImpl_nativeRead(JNIEnv *env, jobject thisObj, jbyteArray b, jint offset, jint len) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -132,7 +132,7 @@ return nread;
 }
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_bind(JNIEnv *env, jobject thisObj, jobject addr) {
+Java_machankura_vsockk_VSockImpl_nativeBind(JNIEnv *env, jobject thisObj, jobject addr) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -162,7 +162,7 @@ env->ThrowNew(env->FindClass("java/net/BindException"),
 }
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_listen(JNIEnv *env, jobject thisObj, jint backlog) {
+Java_machankura_vsockk_VSockImpl_nativeListen(JNIEnv *env, jobject thisObj, jint backlog) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -181,7 +181,7 @@ env->ThrowNew(env->FindClass("java/net/SocketException"),
 }
 
 JNIEXPORT void JNICALL
-Java_machankura_vsockk_native_VSockImpl_accept(JNIEnv *env, jobject thisObj, jobject connectionVSock) {
+Java_machankura_vsockk_VSockImpl_nativeAccept(JNIEnv *env, jobject thisObj, jobject connectionVSock) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
@@ -208,7 +208,7 @@ env->SetIntField(connectionVSock, peerFdField, peer_fd);
 }
 
 JNIEXPORT jint JNICALL
-        Java_machankura_vsockk_native_VSockImpl_getLocalCid(JNIEnv *env, jobject thisObj) {
+        Java_machankura_vsockk_VSockImpl_nativeGetLocalCid(JNIEnv *env, jobject thisObj) {
 jclass thisClass = env->GetObjectClass(thisObj);
 jfieldID fdField = env->GetFieldID(thisClass, "fd", "I");
 int fd = env->GetIntField(thisObj, fdField);
