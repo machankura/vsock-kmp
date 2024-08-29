@@ -2,12 +2,29 @@ package machankura.vsockk
 
 import machankura.vsockk.vsock.VSockAddress
 import java.net.SocketException
+import java.util.Locale
 
 class VSockImpl {
 
     init {
         // Load the native library (libvsock-kmp.so or vsock-kmp.dll)
-        System.loadLibrary("vsock-kmp")
+        // System.loadLibrary("vsock-kmp") //don't know why this one does not work even when it's in the right path
+        //But the long road
+        val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+
+        val libName = when {
+            osName.contains("win") -> "vsock-kmp.dll"
+            osName.contains("nix") || osName.contains("nux") || osName.contains("mac") -> "libvsock-kmp.so"
+            else -> throw UnsupportedOperationException("Unsupported operating system: $osName")
+        }
+
+        val path = System.getProperty("user.dir") + "/build/cmake-build/libs/" + libName
+
+        try {
+            System.load(path)
+        } catch (e: UnsatisfiedLinkError) {
+            throw RuntimeException("Failed to load native library: $path", e)
+        }
     }
 
     // File descriptor for the socket
