@@ -9,6 +9,7 @@ import java.net.SocketException
 import kotlin.test.fail
 import org.junit.jupiter.api.*
 
+//This tests the native functions
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)  // ordered testing necessary
 class VSockImplTest {
@@ -20,6 +21,7 @@ class VSockImplTest {
     @BeforeAll
     fun setUpAll() {
         vSockImpl = VSockImpl()
+        vSockImpl.initialize()
         vSockImpl.create()  // Create the socket once at the beginning
     }
 
@@ -27,9 +29,9 @@ class VSockImplTest {
     fun tearDownAll() {
         try {
             vSockImpl.close()
-            peerVSock?.close() // Close the peer socket if it was created
+            peerVSock?.close()
         } catch (e: Exception) {
-            // Ignore if already closed
+            // Ignore
         }
     }
 
@@ -37,7 +39,7 @@ class VSockImplTest {
     @Order(1) // First test to run
     fun testSocketCreate() {
         try {
-            // The socket is created in @BeforeAll; no need to create again
+            // The socket is created in @BeforeAll; no need to create it ahain
             assertTrue(vSockImpl.fd != -1, "Socket creation failed")
         } catch (e: SocketException) {
             fail("Exception during socket creation: ${e.message}")

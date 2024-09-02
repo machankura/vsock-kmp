@@ -3,10 +3,14 @@ package machankura.vsockk
 import machankura.vsockk.vsock.VSockAddress
 import java.net.SocketException
 import java.util.Locale
+import java.io.File
+import java.io.InputStream
+import java.nio.file.Files
 
 class VSockImpl {
 
-    init {
+    //When building directly on the library call this
+    fun initialize() {
         // Load the native library (libvsock-kmp.so or vsock-kmp.dll)
         // System.loadLibrary("vsock-kmp") //don't know why this one does not work even when it's in the right path
         //But the long road
@@ -26,6 +30,48 @@ class VSockImpl {
             throw RuntimeException("Failed to load native library: $path", e)
         }
     }
+
+    //When using the Jar file as a lib, we need to extract the native libs out
+    fun load()
+    {
+        val osName = System.getProperty("os.name").lowercase(Locale.getDefault())
+        val libName = when {
+            osName.contains("win") -> "vsock-kmp.dll"
+            osName.contains("nix") || osName.contains("nux") || osName.contains("mac") -> "libvsock-kmp.so"
+            else -> throw UnsupportedOperationException("Unsupported operating system: $osName")
+        }
+
+        // Load the library from the JAR file
+        val libPath = "/cmake-build/libs/$libName"
+        val inputStream: InputStream? = this::class.java.getResourceAsStream(libPath)
+
+        if (inputStream == null) {
+            throw UnsatisfiedLinkError("Native library $libName not found in JAR")
+        }
+
+        // Create a temporary directory to store the native library
+        val tempDir = Files.createTempDirectory("nativeLibs").toFile()
+        tempDir.deleteOnExit()
+
+        // Store the lib - temporary file
+        val tempLibFile = File(tempDir, libName)
+        tempLibFile.deleteOnExit()
+
+        // Do the copying
+        inputStream.use { input ->
+            tempLibFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
+
+        // Load the library
+        try {
+            System.load(tempLibFile.absolutePath)
+        } catch (e: UnsatisfiedLinkError) {
+            throw RuntimeException("Failed to load extracted native library: ${tempLibFile.absolutePath}", e)
+        }
+    }
+
 
     // File descriptor for the socket
     var fd: Int = -1

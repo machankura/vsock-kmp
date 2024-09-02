@@ -16,6 +16,7 @@ abstract class BaseVSock : Closeable {
     @Throws(SocketException::class)
     private fun createImplementation() {
         implementation = VSockImpl()
+        implementation!!.load()
         implementation!!.create()
         created = true
     }

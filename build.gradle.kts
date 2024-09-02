@@ -123,7 +123,11 @@ tasks {
         dependsOn(buildNative)
 
         from(layout.buildDirectory.dir("classes/kotlin/jvm/main"))
-        from(layout.buildDirectory.dir("cmake-build/libs"))
+        //from(layout.buildDirectory.dir("cmake-build/libs"))
+        val nativeLibsDir = layout.buildDirectory.dir("cmake-build/libs")
+        from(nativeLibsDir) {
+            into("cmake-build/libs")
+        }
     }
 }
 
